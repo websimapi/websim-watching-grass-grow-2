@@ -60,6 +60,31 @@ skyUniforms['mieDirectionalG'].value = 0.8;
 
 const sun = new THREE.Vector3();
 
+function updateSunPosition() {
+    // 0 = midnight, 0.25 = sunrise, 0.5 = noon, 0.75 = sunset, 1.0 = midnight
+    const elevation = Math.sin(currentTime * Math.PI * 2 - Math.PI / 2) * 90;
+    const azimuth = 180; // Sun in the south
+
+    const phi = THREE.MathUtils.degToRad(90 - elevation);
+    const theta = THREE.MathUtils.degToRad(azimuth);
+
+    sun.setFromSphericalCoords(1, phi, theta);
+
+    sky.material.uniforms['sunPosition'].value.copy(sun);
+    
+    directionalLight.position.copy(sun).multiplyScalar(50);
+
+    if (sun.y > 0) { // Daytime
+        directionalLight.intensity = 1;
+        ambientLight.intensity = 0.4;
+        directionalLight.castShadow = true;
+    } else { // Nighttime
+        directionalLight.intensity = 0;
+        ambientLight.intensity = 0.1;
+        directionalLight.castShadow = false;
+    }
+}
+
 // Ground
 const groundGeometry = new THREE.PlaneGeometry(LAWN_SIZE, LAWN_SIZE, 32, 32);
 const groundMaterial = new THREE.MeshStandardMaterial({ 
@@ -75,6 +100,11 @@ scene.add(ground);
 // Animation loop
 function animate() {
     requestAnimationFrame(animate);
+
+    currentTime += 0.0001;
+    if (currentTime >= 1.0) {
+        currentTime = 0;
+    }
 
     updateSunPosition();
 
